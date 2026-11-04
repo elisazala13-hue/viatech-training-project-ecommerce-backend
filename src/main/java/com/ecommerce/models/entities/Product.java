@@ -1,5 +1,6 @@
 package com.ecommerce.models.entities;
 
+import com.ecommerce.models.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,6 +27,9 @@ public class Product extends AuditorEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Category category;
+
+    @Enumerated(EnumType.STRING)
+    private ProductStatus status = ProductStatus.PENDING;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductImage> images;
