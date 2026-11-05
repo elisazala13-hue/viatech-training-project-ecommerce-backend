@@ -10,6 +10,16 @@ spring:
     username: root
     password: root
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+  data:
+    web:
+      pageable:
+        max-page-size: 50
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,7 +27,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        default_batch_fetch_size: 50
 
 jwt:
   secret: ${JWT_SECRET}
   expiration-ms: 3600000
+
+app:
+  upload-dir: uploads

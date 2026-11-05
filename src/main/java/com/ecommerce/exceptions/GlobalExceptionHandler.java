@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -68,6 +69,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(HttpServletRequest req) {
         return build(ErrorCode.BAD_REQUEST, "Invalid request parameter", req);
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex,
+                                                          HttpServletRequest req) {
+        return build(ErrorCode.BAD_REQUEST, ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleTooLarge(HttpServletRequest req) {
+        return build(ErrorCode.PAYLOAD_TOO_LARGE, "File is too large", req);
     }
 
     @ExceptionHandler(Exception.class)

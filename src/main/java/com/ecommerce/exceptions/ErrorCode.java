@@ -12,7 +12,8 @@ public enum ErrorCode {
     ACCOUNT_SUSPENDED(HttpStatus.FORBIDDEN),
     ACCESS_DENIED(HttpStatus.FORBIDDEN),
     NOT_FOUND(HttpStatus.NOT_FOUND),
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR);
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR),
+    PAYLOAD_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE);
 
     private final HttpStatus httpStatus;
 

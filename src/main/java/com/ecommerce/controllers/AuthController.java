@@ -1,9 +1,9 @@
 package com.ecommerce.controllers;
 
-import com.ecommerce.models.DTO.LoginRequest;
-import com.ecommerce.models.DTO.LoginResponse;
-import com.ecommerce.models.DTO.RegisterRequest;
-import com.ecommerce.models.DTO.UserResponse;
+import com.ecommerce.models.DTO.requests.LoginRequest;
+import com.ecommerce.models.DTO.responses.LoginResponse;
+import com.ecommerce.models.DTO.requests.RegisterRequest;
+import com.ecommerce.models.DTO.responses.UserResponse;
 import com.ecommerce.services.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

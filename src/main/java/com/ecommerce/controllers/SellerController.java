@@ -1,9 +1,9 @@
 package com.ecommerce.controllers;
 
-import com.ecommerce.models.DTO.SellerApplicationRequest;
-import com.ecommerce.models.DTO.SellerProfileResponse;
-import com.ecommerce.models.DTO.StoreRequest;
-import com.ecommerce.models.DTO.StoreResponse;
+import com.ecommerce.models.DTO.requests.SellerApplicationRequest;
+import com.ecommerce.models.DTO.responses.SellerProfileResponse;
+import com.ecommerce.models.DTO.requests.StoreRequest;
+import com.ecommerce.models.DTO.responses.StoreResponse;
 import com.ecommerce.security.CustomUserDetails;
 import com.ecommerce.services.SellerService;
 import com.ecommerce.services.StoreService;

@@ -1,12 +1,11 @@
 package com.ecommerce.services;
 
-import com.ecommerce.models.DTO.LoginRequest;
-import com.ecommerce.models.DTO.LoginResponse;
-import com.ecommerce.models.DTO.RegisterRequest;
-import com.ecommerce.models.DTO.UserResponse;
+import com.ecommerce.models.DTO.requests.LoginRequest;
+import com.ecommerce.models.DTO.responses.LoginResponse;
+import com.ecommerce.models.DTO.requests.RegisterRequest;
+import com.ecommerce.models.DTO.responses.UserResponse;
 import com.ecommerce.exceptions.EmailAlreadyExistsException;
 import com.ecommerce.models.entities.User;
-import com.ecommerce.models.enums.UserRole;
 import com.ecommerce.repositories.UserRepository;
 import com.ecommerce.security.CustomUserDetails;
 import com.ecommerce.security.JwtService;

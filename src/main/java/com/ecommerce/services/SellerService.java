@@ -1,7 +1,7 @@
 package com.ecommerce.services;
 
-import com.ecommerce.models.DTO.SellerApplicationRequest;
-import com.ecommerce.models.DTO.SellerProfileResponse;
+import com.ecommerce.models.DTO.requests.SellerApplicationRequest;
+import com.ecommerce.models.DTO.responses.SellerProfileResponse;
 import com.ecommerce.exceptions.ConflictException;
 import com.ecommerce.exceptions.ResourceNotFoundException;
 import com.ecommerce.models.entities.SellerProfile;
@@ -9,6 +9,7 @@ import com.ecommerce.models.enums.SellerStatus;
 import com.ecommerce.repositories.SellerProfileRepository;
 import com.ecommerce.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,5 +72,16 @@ public class SellerService {
         profile.setNipt(req.nipt().trim());
         profile.setBusinessPhone(req.businessPhone());
         profile.setBusinessAddress(req.businessAddress());
+    }
+
+    @Transactional(readOnly = true)
+    public SellerProfile getApprovedSeller(Long userId) {
+        SellerProfile seller = sellerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Seller profile not found"));
+
+        if (seller.getStatus() != SellerStatus.APPROVED) {
+            throw new AccessDeniedException("Seller is not approved");
+        }
+        return seller;
     }
 }

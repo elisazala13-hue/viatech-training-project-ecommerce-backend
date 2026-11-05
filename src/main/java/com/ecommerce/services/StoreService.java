@@ -1,9 +1,9 @@
 package com.ecommerce.services;
 
-import com.ecommerce.models.DTO.StoreRequest;
+import com.ecommerce.models.DTO.requests.StoreRequest;
 import com.ecommerce.exceptions.ConflictException;
 import com.ecommerce.exceptions.ResourceNotFoundException;
-import com.ecommerce.models.DTO.StoreResponse;
+import com.ecommerce.models.DTO.responses.StoreResponse;
 import com.ecommerce.models.entities.SellerProfile;
 import com.ecommerce.models.entities.Store;
 import com.ecommerce.models.enums.SellerStatus;

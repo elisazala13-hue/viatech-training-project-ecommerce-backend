@@ -3,16 +3,30 @@ package com.ecommerce.repositories;
 import com.ecommerce.models.entities.Product;
 import com.ecommerce.models.enums.ProductStatus;
 import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import org.springframework.data.domain.Pageable;
 
+import java.util.Optional;
+
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    Page<Product> findBySellerId(Long sellerId, Pageable pageable);
+    boolean existsByCategoryId(Long categoryId);
 
+    Optional<Product> findByIdAndSellerIdAndStatusNot(Long id, Long sellerId, ProductStatus status);
+
+    @EntityGraph(attributePaths = "category")
+    Page<Product> findBySellerIdAndStatusNot(Long sellerId, ProductStatus status, Pageable pageable);
+
+    Optional<Product> findByIdAndStatus(Long id, ProductStatus status);
+
+    @EntityGraph(attributePaths = "category")
+    Page<Product> findBySellerIdAndStatus(Long sellerId, ProductStatus status, Pageable pageable);
+
+    @EntityGraph(attributePaths = "category")
     @Query("""
            SELECT p FROM Product p
            WHERE p.status = :status
@@ -23,4 +37,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                          @Param("categoryId") Long categoryId,
                          @Param("q") String q,
                          Pageable pageable);
+
+    @EntityGraph(attributePaths = "category")
+    Page<Product> findByStatus(ProductStatus status, Pageable pageable);
+
+    @EntityGraph(attributePaths = "category")
+    Page<Product> findByStatusNot(ProductStatus status, Pageable pageable);
 }

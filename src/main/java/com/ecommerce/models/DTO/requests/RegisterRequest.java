@@ -1,4 +1,4 @@
-package com.ecommerce.models.DTO;
+package com.ecommerce.models.DTO.requests;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

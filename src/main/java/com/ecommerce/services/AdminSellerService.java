@@ -1,6 +1,6 @@
 package com.ecommerce.services;
 
-import com.ecommerce.models.DTO.SellerProfileResponse;
+import com.ecommerce.models.DTO.responses.SellerProfileResponse;
 import com.ecommerce.exceptions.ConflictException;
 import com.ecommerce.exceptions.ResourceNotFoundException;
 import com.ecommerce.models.entities.SellerProfile;

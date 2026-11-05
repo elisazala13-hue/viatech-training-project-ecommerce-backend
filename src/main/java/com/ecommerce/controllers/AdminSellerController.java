@@ -1,7 +1,7 @@
 package com.ecommerce.controllers;
 
-import com.ecommerce.models.DTO.RejectSellerRequest;
-import com.ecommerce.models.DTO.SellerProfileResponse;
+import com.ecommerce.models.DTO.requests.RejectSellerRequest;
+import com.ecommerce.models.DTO.responses.SellerProfileResponse;
 import com.ecommerce.models.enums.SellerStatus;
 import com.ecommerce.services.AdminSellerService;
 import jakarta.validation.Valid;

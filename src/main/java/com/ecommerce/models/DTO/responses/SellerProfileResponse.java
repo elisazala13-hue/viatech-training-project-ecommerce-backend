@@ -1,4 +1,4 @@
-package com.ecommerce.models.DTO;
+package com.ecommerce.models.DTO.responses;
 
 import com.ecommerce.models.entities.SellerProfile;
 import com.ecommerce.models.enums.SellerStatus;
