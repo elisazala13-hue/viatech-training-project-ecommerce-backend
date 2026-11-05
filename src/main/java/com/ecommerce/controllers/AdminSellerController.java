@@ -43,4 +43,14 @@ public class AdminSellerController {
                                         @Valid @RequestBody RejectSellerRequest request) {
         return adminSellerService.reject(id, request.reason());
     }
+
+    @PatchMapping("/{id}/suspend")
+    public SellerProfileResponse suspend(@PathVariable Long id) {
+        return adminSellerService.suspend(id);
+    }
+
+    @PatchMapping("/{id}/activate")
+    public SellerProfileResponse activate(@PathVariable Long id) {
+        return adminSellerService.activate(id);
+    }
 }

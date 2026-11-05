@@ -44,6 +44,34 @@ public class AdminSellerService {
         return SellerProfileResponse.from(profile);
     }
 
+    @Transactional
+    public SellerProfileResponse suspend(Long id) {
+        SellerProfile profile = sellerProfileRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Seller not found"));
+
+        if (profile.getStatus() != SellerStatus.APPROVED) {
+            throw new ConflictException("Only approved sellers can be suspended");
+        }
+
+        profile.setStatus(SellerStatus.SUSPENDED);
+
+        return SellerProfileResponse.from(profile);
+    }
+
+    @Transactional
+    public SellerProfileResponse activate(Long id) {
+        SellerProfile profile = sellerProfileRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Seller not found"));
+
+        if (profile.getStatus() != SellerStatus.SUSPENDED) {
+            throw new ConflictException("Only suspended sellers can be activated");
+        }
+
+        profile.setStatus(SellerStatus.APPROVED);
+
+        return SellerProfileResponse.from(profile);
+    }
+
     private SellerProfile findPendingOrThrow(Long id) {
         SellerProfile profile = sellerProfileRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Seller application not found"));
