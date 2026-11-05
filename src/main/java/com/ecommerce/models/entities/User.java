@@ -1,5 +1,6 @@
 package com.ecommerce.models.entities;
 
+import com.ecommerce.models.enums.UserRole;
 import com.ecommerce.models.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -21,9 +22,7 @@ public class User extends AuditorEntity {
     @Enumerated(EnumType.STRING)
     private UserStatus status = UserStatus.ACTIVE;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id")
-    private Role role;
-
+    @Enumerated(EnumType.STRING)
+    private UserRole role = UserRole.CUSTOMER;
 
 }

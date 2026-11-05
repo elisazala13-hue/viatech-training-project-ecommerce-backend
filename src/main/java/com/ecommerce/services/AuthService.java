@@ -5,10 +5,8 @@ import com.ecommerce.models.DTO.LoginResponse;
 import com.ecommerce.models.DTO.RegisterRequest;
 import com.ecommerce.models.DTO.UserResponse;
 import com.ecommerce.exceptions.EmailAlreadyExistsException;
-import com.ecommerce.models.entities.Role;
 import com.ecommerce.models.entities.User;
 import com.ecommerce.models.enums.UserRole;
-import com.ecommerce.repositories.RoleRepository;
 import com.ecommerce.repositories.UserRepository;
 import com.ecommerce.security.CustomUserDetails;
 import com.ecommerce.security.JwtService;
@@ -25,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -38,14 +35,10 @@ public class AuthService {
             throw new EmailAlreadyExistsException(email);
         }
 
-        Role customerRole = roleRepository.findByName(UserRole.CUSTOMER)
-                .orElseThrow(() -> new IllegalStateException("CUSTOMER role is missing"));
-
         User user = new User();
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(req.password()));
         user.setFullName(req.fullName().trim());
-        user.setRole(customerRole);
 
         return UserResponse.from(userRepository.save(user));
     }
