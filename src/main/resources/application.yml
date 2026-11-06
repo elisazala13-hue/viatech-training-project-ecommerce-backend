@@ -41,3 +41,7 @@ app:
   upload-dir: uploads
   #currency: eur
   #order-expiration-minutes: 30
+
+logging:
+  level:
+    org.springframework.security: DEBUG

@@ -29,7 +29,7 @@ public class SellerController {
     private final StoreService storeService;
 
     @PostMapping("/apply")
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public SellerProfileResponse apply(@AuthenticationPrincipal CustomUserDetails principal,
                                        @Valid @RequestBody SellerApplicationRequest request) {
@@ -37,20 +37,20 @@ public class SellerController {
     }
 
     @GetMapping("/me")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'SELLER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'SELLER', 'ADMIN')")
     public SellerProfileResponse getMe(@AuthenticationPrincipal CustomUserDetails principal) {
         return sellerService.getMine(principal.getUser().getId());
     }
 
     @PutMapping("/me")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'SELLER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'SELLER', 'ADMIN')")
     public SellerProfileResponse updateMe(@AuthenticationPrincipal CustomUserDetails principal,
                                           @Valid @RequestBody SellerApplicationRequest request) {
         return sellerService.updateMine(principal.getUser().getId(), request);
     }
 
     @PostMapping("/me/store")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public StoreResponse createStore(@AuthenticationPrincipal CustomUserDetails principal,
                                      @Valid @RequestBody StoreRequest request) {
@@ -58,13 +58,13 @@ public class SellerController {
     }
 
     @GetMapping("/me/store")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     public StoreResponse getMyStore(@AuthenticationPrincipal CustomUserDetails principal) {
         return storeService.getMine(principal.getUser().getId());
     }
 
     @PutMapping("/me/store")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     public StoreResponse updateMyStore(@AuthenticationPrincipal CustomUserDetails principal,
                                        @Valid @RequestBody StoreRequest request) {
         return storeService.updateMine(principal.getUser().getId(), request);
