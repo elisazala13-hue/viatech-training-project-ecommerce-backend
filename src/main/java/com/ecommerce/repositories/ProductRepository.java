@@ -5,6 +5,7 @@ import com.ecommerce.models.enums.ProductStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,8 +14,6 @@ import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
-
-    boolean existsByCategoryId(Long categoryId);
 
     Optional<Product> findByIdAndSellerIdAndStatusNot(Long id, Long sellerId, ProductStatus status);
 
@@ -43,4 +42,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @EntityGraph(attributePaths = "category")
     Page<Product> findByStatusNot(ProductStatus status, Pageable pageable);
+
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE Product p SET p.quantity = p.quantity - :qty " +
+            "WHERE p.id = :id AND p.quantity >= :qty")
+    int decreaseStock(@Param("id") Long id, @Param("qty") int qty);
+
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE Product p SET p.quantity = p.quantity + :qty WHERE p.id = :id")
+    int increaseStock(@Param("id") Long id, @Param("qty") int qty);
 }

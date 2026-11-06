@@ -2,10 +2,13 @@ package com.ecommerce.repositories;
 
 import com.ecommerce.models.entities.CartItem;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.Optional;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
-    Optional<CartItem> findByCartIdAndProductId(Long cartId, Long productId);
-    void deleteByProductId(Long productId);
+
+    @Modifying(flushAutomatically = true)
+    @Query("DELETE FROM CartItem ci WHERE ci.product.id = :productId")
+    int deleteByProductId(@Param("productId") Long productId);
 }
