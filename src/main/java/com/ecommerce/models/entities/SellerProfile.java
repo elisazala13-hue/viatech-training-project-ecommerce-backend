@@ -15,7 +15,9 @@ public class SellerProfile extends AuditorEntity {
     @OneToOne(fetch = FetchType.EAGER)
     private User user;
 
+    @Column(unique = true)
     private String nipt;
+
     private String businessPhone;
     private String businessAddress;
 

@@ -26,6 +26,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OrderService {
 
+    // the seller is only allowed to change from one step to the next
     private static final Map<OrderStatus, OrderStatus> NEXT_STATUS = Map.of(
             OrderStatus.PAID, OrderStatus.PROCESSING,
             OrderStatus.PROCESSING, OrderStatus.SHIPPED,
@@ -54,6 +55,7 @@ public class OrderService {
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
+        // cannot cancel orders that have been paid
         if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
             throw new ConflictException("Only unpaid orders can be cancelled");
         }
@@ -68,7 +70,6 @@ public class OrderService {
                 .filter(o -> o.getStatus() == OrderStatus.PENDING_PAYMENT)
                 .ifPresent(this::cancelUnpaid);
     }
-
 
     @Transactional(readOnly = true)
     public Page<SellerOrderDetailResponse> listForSeller(Long userId, OrderStatus status, Pageable pageable) {
@@ -96,6 +97,7 @@ public class OrderService {
         }
         sellerOrder.setStatus(newStatus);
 
+        // changes total order depending on the other seller orders (sets the min seller order status as the order status)
         Order order = sellerOrder.getOrder();
         order.getSellerOrders().stream()
                 .map(SellerOrder::getStatus)
@@ -136,10 +138,8 @@ public class OrderService {
         return sellerOrder;
     }
 
-    // Anulon porosinë e papaguar dhe e kthen stokun
     private void cancelUnpaid(Order order) {
-        paymentService.cancelPendingIntents(order.getId());   // nëse pagesa është në proces, hedh Conflict
-
+        paymentService.cancelPendingIntents(order.getId());
         order.setStatus(OrderStatus.CANCELLED);
         for (SellerOrder sellerOrder : order.getSellerOrders()) {
             sellerOrder.setStatus(OrderStatus.CANCELLED);
