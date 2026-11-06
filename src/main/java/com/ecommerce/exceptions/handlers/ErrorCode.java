@@ -1,4 +1,4 @@
-package com.ecommerce.exceptions;
+package com.ecommerce.exceptions.handlers;
 
 import org.springframework.http.HttpStatus;
 
@@ -13,7 +13,8 @@ public enum ErrorCode {
     ACCESS_DENIED(HttpStatus.FORBIDDEN),
     NOT_FOUND(HttpStatus.NOT_FOUND),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR),
-    PAYLOAD_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE);
+    PAYLOAD_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE),
+    PAYMENT_PROVIDER_ERROR(HttpStatus.BAD_GATEWAY);
 
     private final HttpStatus httpStatus;
 

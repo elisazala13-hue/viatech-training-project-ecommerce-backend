@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter @Setter
@@ -27,5 +28,5 @@ public class SellerOrder extends AuditorEntity {
     private BigDecimal subtotal;
 
     @OneToMany(mappedBy = "sellerOrder", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> items;
+    private List<OrderItem> items = new ArrayList<>();
 }

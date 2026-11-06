@@ -33,5 +33,11 @@ jwt:
   secret: ${JWT_SECRET}
   expiration-ms: 3600000
 
+#stripe:
+  #secret-key: ${STRIPE_SECRET_KEY}
+ # webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
 app:
   upload-dir: uploads
+  #currency: eur
+  #order-expiration-minutes: 30

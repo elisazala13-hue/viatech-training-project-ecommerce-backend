@@ -3,6 +3,8 @@ package com.ecommerce.models.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -17,5 +19,5 @@ public class Cart extends AuditorEntity {
     private User user;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CartItem> items;
+    private List<CartItem> items = new ArrayList<>();
 }

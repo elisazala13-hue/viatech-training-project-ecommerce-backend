@@ -1,4 +1,4 @@
-package com.ecommerce.exceptions;
+package com.ecommerce.exceptions.handlers;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

@@ -8,6 +8,7 @@ import com.ecommerce.models.entities.Product;
 import com.ecommerce.models.entities.SellerProfile;
 import com.ecommerce.models.entities.Store;
 import com.ecommerce.models.enums.ProductStatus;
+import com.ecommerce.repositories.CartItemRepository;
 import com.ecommerce.repositories.CategoryRepository;
 import com.ecommerce.repositories.ProductRepository;
 import com.ecommerce.repositories.StoreRepository;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final CartItemRepository cartItemRepository;
     private final CategoryRepository categoryRepository;
     private final StoreRepository storeRepository;
     private final SellerService sellerService;
@@ -51,7 +53,9 @@ public class ProductService {
 
     @Transactional
     public void delete(Long userId, Long productId) {
-        findOwned(userId, productId).setStatus(ProductStatus.DELETED);
+        Product product = findOwned(userId, productId);
+        product.setStatus(ProductStatus.DELETED);
+        cartItemRepository.deleteByProductId(productId);
     }
 
     @Transactional(readOnly = true)

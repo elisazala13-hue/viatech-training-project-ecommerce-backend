@@ -1,5 +1,6 @@
-package com.ecommerce.exceptions;
+package com.ecommerce.exceptions.handlers;
 
+import com.ecommerce.exceptions.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -85,6 +86,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(HttpServletRequest req) {
         return build(ErrorCode.INTERNAL_ERROR, "Something went wrong", req);
+    }
+
+    @ExceptionHandler(PaymentException.class)
+    public ResponseEntity<ErrorResponse> handlePayment(PaymentException ex, HttpServletRequest req) {
+        return build(ErrorCode.PAYMENT_PROVIDER_ERROR, ex.getMessage(), req);
     }
 
     private ResponseEntity<ErrorResponse> build(ErrorCode code, String message,
