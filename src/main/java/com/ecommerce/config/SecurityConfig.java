@@ -40,7 +40,18 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);//this one could be changed also
+                    //by using oauth2Server check it out also it does everything in the backround dont need to create jwtfilter file
+                    //to retrieve the token to validate its premissions ecetra ecetra
+
+
+
+
+
+
+
+        //Add Cors configuration look it up what it is and add it
+
 
         return http.build();
     }
