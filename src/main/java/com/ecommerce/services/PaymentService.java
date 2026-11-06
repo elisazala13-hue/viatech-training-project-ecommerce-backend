@@ -55,6 +55,7 @@ public class PaymentService {
         }
 
         try {
+            // handles duplicates
             Payment pending = paymentRepository
                     .findFirstByOrderIdAndStatusOrderByIdDesc(orderId, PaymentStatus.PENDING)
                     .orElse(null);
@@ -69,6 +70,7 @@ public class PaymentService {
 
             long amount = order.getTotalAmount().movePointRight(2).longValueExact();
 
+            // Stripe class that handles payment process
             PaymentIntent intent = PaymentIntent.create(PaymentIntentCreateParams.builder()
                     .setAmount(amount)
                     .setCurrency(currency)
@@ -88,6 +90,7 @@ public class PaymentService {
             payment.setCurrency(currency);
             payment.setStatus(PaymentStatus.PENDING);
 
+            // the clientSecret token is sent to the client and it allows them to pay for the order through Stripe
             return PaymentIntentResponse.of(paymentRepository.save(payment), intent.getClientSecret());
 
         } catch (StripeException e) {
@@ -108,6 +111,7 @@ public class PaymentService {
             throw new BadRequestException("Missing Stripe signature");
         }
 
+        // webhook checks if the payment is really paid
         Event event;
         try {
             event = Webhook.constructEvent(payload, signature, webhookSecret);
