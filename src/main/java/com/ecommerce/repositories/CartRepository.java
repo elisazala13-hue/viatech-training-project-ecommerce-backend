@@ -14,7 +14,7 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
     @EntityGraph(attributePaths = {"items", "items.product"})
     Optional<Cart> findByUserId(Long userId);
 
-    //on checkout cart is locked while the order is being created to avoid duplicate orders on duplicate requests
+    // on checkout cart is locked while the order is being created to avoid duplicate orders on duplicate requests
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM Cart c WHERE c.user.id = :userId")
     Optional<Cart> findByUserIdForUpdate(@Param("userId") Long userId);

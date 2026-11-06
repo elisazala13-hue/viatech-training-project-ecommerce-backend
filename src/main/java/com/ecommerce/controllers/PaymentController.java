@@ -26,14 +26,12 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/intent")
-    @PreAuthorize("hasRole('CUSTOMER')")
     public PaymentIntentResponse createIntent(@AuthenticationPrincipal CustomUserDetails principal,
                                               @Valid @RequestBody CreatePaymentIntentRequest request) {
         return paymentService.createIntent(principal.getUser().getId(), request.orderId());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('CUSTOMER')")
     public PaymentResponse getById(@AuthenticationPrincipal CustomUserDetails principal,
                                    @PathVariable Long id) {
         return paymentService.getMine(principal.getUser().getId(), id);

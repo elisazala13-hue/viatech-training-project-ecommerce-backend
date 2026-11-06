@@ -43,6 +43,7 @@ public class CartService {
             throw new BadRequestException("You cannot buy your own products");
         }
 
+        // check if product already exists in cart
         CartItem item = cart.getItems().stream()
                 .filter(i -> i.getProduct().getId().equals(product.getId()))
                 .findFirst()
@@ -51,6 +52,7 @@ public class CartService {
         int newQuantity = (item == null ? 0 : item.getQuantity()) + req.quantity();
         checkStock(product, newQuantity);
 
+        // if product doesn't exist create it, else update qty
         if (item == null) {
             item = new CartItem();
             item.setCart(cart);

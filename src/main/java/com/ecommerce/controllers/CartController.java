@@ -27,7 +27,6 @@ public class CartController {
 
     private final CartService cartService;
 
-
     @GetMapping
     public CartResponse getCart(@AuthenticationPrincipal CustomUserDetails principal) {
         return cartService.getCart(principal.getUser().getId());

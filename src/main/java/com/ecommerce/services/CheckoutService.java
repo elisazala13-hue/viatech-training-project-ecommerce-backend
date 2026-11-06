@@ -40,6 +40,8 @@ public class CheckoutService {
 
     @Transactional
     public OrderResponse checkout(Long userId, CheckoutRequest req) {
+        // cart is considered empty if it doesn't exist or doesn't have items
+        // the repository method locks the cart while order is being processed
         Cart cart = cartRepository.findByUserIdForUpdate(userId)
                 .orElseThrow(() -> new BadRequestException("Cart is empty"));
 
@@ -54,11 +56,13 @@ public class CheckoutService {
                 .sorted(Comparator.comparing((CartItem i) -> i.getProduct().getId()))
                 .toList();
 
+        // create a new order for customer
         Order order = new Order();
         order.setCustomer(cart.getUser());
         order.setShippingAddress(address);
         order.setStatus(OrderStatus.PENDING_PAYMENT);
 
+        // create seller orders for sellers
         Map<Long, SellerOrder> bySeller = new LinkedHashMap<>();
         BigDecimal total = BigDecimal.ZERO;
 
@@ -75,6 +79,7 @@ public class CheckoutService {
                 throw new ConflictException("Not enough stock for: " + product.getName());
             }
 
+            // seller id serves as hash map key
             SellerOrder sellerOrder = bySeller.computeIfAbsent(product.getSeller().getId(), id -> {
                 SellerOrder so = new SellerOrder();
                 so.setOrder(order);
@@ -85,6 +90,7 @@ public class CheckoutService {
                 return so;
             });
 
+            // maps order items by seller and groups them in seller orders
             OrderItem orderItem = new OrderItem();
             orderItem.setSellerOrder(sellerOrder);
             orderItem.setProduct(product);
@@ -92,6 +98,8 @@ public class CheckoutService {
             orderItem.setQuantity(cartItem.getQuantity());
             sellerOrder.getItems().add(orderItem);
 
+            // calculate total in the moment of purchase
+            // add product total to seller order and to customer order
             BigDecimal lineTotal = product.getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity()));
             sellerOrder.setSubtotal(sellerOrder.getSubtotal().add(lineTotal));
             total = total.add(lineTotal);
@@ -100,6 +108,7 @@ public class CheckoutService {
         order.setTotalAmount(total);
         orderRepository.save(order);
 
+        // after the order is saved with status "PENDING_PAYMENT" we empty cart in one atomic transaction
         cart.getItems().clear();
 
         return OrderResponse.from(order);
