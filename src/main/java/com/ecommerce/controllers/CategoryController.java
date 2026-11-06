@@ -9,12 +9,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/admin/categories")
+@RequestMapping("/api/categories")
 @RequiredArgsConstructor
-public class AdminCategoryController {
+public class CategoryController {
 
     private final AdminCategoryService adminCategoryService;
 
@@ -27,12 +28,14 @@ public class AdminCategoryController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public CategoryResponse create(
             @Valid @RequestBody CategoryRequest request) {
         return adminCategoryService.create(request);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public CategoryResponse update(
             @PathVariable Long id,
             @Valid @RequestBody CategoryRequest request) {
@@ -40,6 +43,7 @@ public class AdminCategoryController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(@PathVariable Long id) {
         adminCategoryService.delete(id);
     }
