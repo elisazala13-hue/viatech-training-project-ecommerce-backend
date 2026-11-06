@@ -23,7 +23,6 @@ public class CheckoutController {
     private final CheckoutService checkoutService;
 
     @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER')")
     @ResponseStatus(HttpStatus.CREATED)
     public OrderResponse checkout(@AuthenticationPrincipal CustomUserDetails principal,
                                   @Valid @RequestBody CheckoutRequest request) {
