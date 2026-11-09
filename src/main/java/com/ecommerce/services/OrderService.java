@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.management.monitor.GaugeMonitor;
 import java.util.Comparator;
 import java.util.Map;
 
@@ -52,6 +53,7 @@ public class OrderService {
     public OrderResponse cancelMine(Long userId, Long orderId) {
         findMine(userId, orderId);
 
+        // locks the order
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
@@ -75,6 +77,7 @@ public class OrderService {
     public Page<SellerOrderDetailResponse> listForSeller(Long userId, OrderStatus status, Pageable pageable) {
         SellerProfile seller = sellerService.getApprovedSeller(userId);
 
+        // unpaid orders do not appear for sellers
         Page<SellerOrder> page = (status == null || status == OrderStatus.PENDING_PAYMENT)
                 ? sellerOrderRepository.findBySellerIdAndStatusNot(seller.getId(), OrderStatus.PENDING_PAYMENT, pageable)
                 : sellerOrderRepository.findBySellerIdAndStatus(seller.getId(), status, pageable);
@@ -139,11 +142,14 @@ public class OrderService {
     }
 
     private void cancelUnpaid(Order order) {
+        // cancel payment from Stripe
         paymentService.cancelPendingIntents(order.getId());
         order.setStatus(OrderStatus.CANCELLED);
+
         for (SellerOrder sellerOrder : order.getSellerOrders()) {
             sellerOrder.setStatus(OrderStatus.CANCELLED);
             for (OrderItem item : sellerOrder.getItems()) {
+                // release stock
                 productRepository.increaseStock(item.getProduct().getId(), item.getQuantity());
             }
         }

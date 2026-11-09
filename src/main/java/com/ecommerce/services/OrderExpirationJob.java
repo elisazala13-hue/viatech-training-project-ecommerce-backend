@@ -21,8 +21,10 @@ public class OrderExpirationJob {
     @Value("${app.order-expiration-minutes:30}")
     private long expirationMinutes;
 
+    // freq 5 minutes
     @Scheduled(fixedDelay = 300_000)
     public void cancelExpiredOrders() {
+        // calculate createdOn for expired orders
         LocalDateTime cutoff = LocalDateTime.now().minusMinutes(expirationMinutes);
 
         for (Long id : orderRepository.findIdsByStatusAndCreatedOnBefore(OrderStatus.PENDING_PAYMENT, cutoff)) {

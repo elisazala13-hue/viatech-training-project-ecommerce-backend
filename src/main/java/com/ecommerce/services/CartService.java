@@ -49,6 +49,7 @@ public class CartService {
                 .findFirst()
                 .orElse(null);
 
+        // calculates the new qty whether the item was in cart or not
         int newQuantity = (item == null ? 0 : item.getQuantity()) + req.quantity();
         checkStock(product, newQuantity);
 
@@ -73,11 +74,9 @@ public class CartService {
         CartItem item = findItem(cart, itemId);
 
         Product product = item.getProduct();
-        if (product.getStatus() != ProductStatus.APPROVED) {
-            throw new ConflictException("Product is no longer available");
-        }
         checkStock(product, req.quantity());
 
+        // frontend sends the new qty, not +1/-1
         item.setQuantity(req.quantity());
         return CartResponse.from(cart);
     }
@@ -87,7 +86,15 @@ public class CartService {
         Cart cart = getOrCreateCart(userId);
         CartItem item = findItem(cart, itemId);
 
+        // cart item deleted from db because of orphanRemoval = true
         cart.getItems().remove(item);
+        return CartResponse.from(cart);
+    }
+
+    @Transactional
+    public CartResponse clearCart(Long userId) {
+        Cart cart = getOrCreateCart(userId);
+        cart.getItems().clear();
         return CartResponse.from(cart);
     }
 

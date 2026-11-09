@@ -33,6 +33,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class PaymentService {
 
+    // PaymentIntent Statuses in Stripe for reusable intent
     private static final Set<String> REUSABLE_STATUSES =
             Set.of("requires_payment_method", "requires_confirmation", "requires_action");
 
@@ -68,6 +69,7 @@ public class PaymentService {
                 pending.setStatus(PaymentStatus.FAILED);
             }
 
+            // Stripe works in cents
             long amount = order.getTotalAmount().movePointRight(2).longValueExact();
 
             // Stripe class that handles payment process
@@ -82,6 +84,7 @@ public class PaymentService {
                                             PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
                                     .build())
                     .build());
+                    // disable payment methods that require redirecting for simplicity reasons in frontend
 
             Payment payment = new Payment();
             payment.setOrder(order);
@@ -128,6 +131,8 @@ public class PaymentService {
 
     private void onSucceeded(PaymentIntent intent) {
         Payment payment = paymentRepository.findByStripePaymentIntentId(intent.getId()).orElse(null);
+
+        // handle duplicate events
         if (payment == null || payment.getStatus() == PaymentStatus.SUCCEEDED) {
             return;
         }
@@ -155,6 +160,7 @@ public class PaymentService {
                 });
     }
 
+    // converts webhook event to a PaymentIntent object
     private PaymentIntent extractIntent(Event event) {
         EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
         try {
@@ -175,6 +181,7 @@ public class PaymentService {
 
         for (Payment payment : payments) {
             try {
+                // get intent from Stripe using stripePaymentIntentId
                 PaymentIntent intent = PaymentIntent.retrieve(payment.getStripePaymentIntentId());
 
                 if ("succeeded".equals(intent.getStatus()) || "processing".equals(intent.getStatus())) {
@@ -187,7 +194,7 @@ public class PaymentService {
                 throw new PaymentException("Payment provider error: " + e.getMessage());
             }
 
-            payment.setStatus(PaymentStatus.FAILED);
+            payment.setStatus(PaymentStatus.CANCELLED);
             payment.setFailureReason("Order cancelled");
         }
     }
