@@ -1,44 +1,56 @@
 package com.ecommerce.security;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
-import java.util.Date;
+import java.time.Instant;
+import java.util.UUID;
 
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret}")
-    private String secret;
+    private final JwtEncoder encoder;
+    private final JwtDecoder refreshDecoder;
 
     @Value("${jwt.expiration-ms}")
-    private long expirationMs;
+    private long accessExpirationMs;
 
-    private SecretKey key() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+    @Value("${jwt.refresh-expiration-ms}")
+    private long refreshExpirationMs;
+
+    public JwtService(JwtEncoder encoder,
+                      @Qualifier("refreshJwtDecoder") JwtDecoder refreshDecoder) {
+        this.encoder = encoder;
+        this.refreshDecoder = refreshDecoder;
     }
 
-    public String generateToken(UserDetails user) {
-        Date now = new Date();
-        return Jwts.builder()
-                .subject(user.getUsername())
+    public String generateAccessToken(UserDetails user) {
+        return build(user.getUsername(), "access", accessExpirationMs);
+    }
+
+    public String generateRefreshToken(UserDetails user) {
+        return build(user.getUsername(), "refresh", refreshExpirationMs);
+    }
+
+    public String extractUsernameFromRefresh(String token) {
+        return refreshDecoder.decode(token).getSubject();
+    }
+
+    private String build(String subject, String type, long ttlMs) {
+        Instant now = Instant.now();
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .subject(subject)
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + expirationMs))
-                .signWith(key())
-                .compact();
-    }
-
-    public String extractUsername(String token) {
-        return Jwts.parser()
-                .verifyWith(key())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+                .expiresAt(now.plusMillis(ttlMs))
+                .id(UUID.randomUUID().toString())
+                .claim("token_type", type)
+                .build();
+        JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
+        return encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
     }
 }

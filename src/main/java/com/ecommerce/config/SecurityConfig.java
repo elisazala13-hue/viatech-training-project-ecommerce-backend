@@ -1,27 +1,40 @@
 package com.ecommerce.config;
 
-import com.ecommerce.security.JwtAuthenticationFilter;
+import com.ecommerce.security.CustomUserDetailsService;
+import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import io.jsonwebtoken.io.Decoders;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.List;
 
 @Configuration
@@ -30,7 +43,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtFilter;
+    private final CustomUserDetailsService userDetailsService;
+
+    @Value("${jwt.secret}")
+    private String secret;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -48,11 +64,52 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhooks/stripe").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);//this one could be changed also
-                    //by using oauth2Server check it out also it does everything in the backround dont need to create jwtfilter file
-                    //to retrieve the token to validate its premissions ecetra ecetra
+                .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter())));
 
         return http.build();
+    }
+
+    private SecretKey secretKey() {
+        return new SecretKeySpec(Decoders.BASE64.decode(secret), "HmacSHA256");
+    }
+
+    // access token
+    @Bean
+    @Primary
+    public JwtDecoder jwtDecoder() {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(secretKey())
+                .macAlgorithm(MacAlgorithm.HS256).build();
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefault(),
+                new JwtClaimValidator<String>("token_type", "access"::equals)));
+        return decoder;
+    }
+
+    // refresh token
+    @Bean
+    public JwtDecoder refreshJwtDecoder() {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(secretKey())
+                .macAlgorithm(MacAlgorithm.HS256).build();
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefault(),
+                new JwtClaimValidator<String>("token_type", "refresh"::equals)));
+        return decoder;
+    }
+
+    @Bean
+    public JwtEncoder jwtEncoder() {
+        return new NimbusJwtEncoder(new ImmutableSecret<>(secretKey()));
+    }
+
+    // loads user from db
+    private Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthConverter() {
+        return jwt -> {
+            UserDetails user = userDetailsService.loadUserByUsername(jwt.getSubject());
+            if (!user.isEnabled()) {
+                throw new DisabledException("User is not active");
+            }
+            return new UsernamePasswordAuthenticationToken(user, jwt, user.getAuthorities());
+        };
     }
 
     @Bean

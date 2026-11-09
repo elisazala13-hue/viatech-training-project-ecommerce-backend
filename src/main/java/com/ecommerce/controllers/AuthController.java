@@ -1,6 +1,7 @@
 package com.ecommerce.controllers;
 
 import com.ecommerce.models.DTO.requests.LoginRequest;
+import com.ecommerce.models.DTO.requests.RefreshRequest;
 import com.ecommerce.models.DTO.responses.LoginResponse;
 import com.ecommerce.models.DTO.requests.RegisterRequest;
 import com.ecommerce.models.DTO.responses.UserResponse;
@@ -29,5 +30,11 @@ public class AuthController {
     @PostMapping("/login")
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+
+    @PostMapping("/refresh")
+    public LoginResponse refresh(@Valid @RequestBody RefreshRequest req) {
+        return authService.refresh(req);
     }
 }

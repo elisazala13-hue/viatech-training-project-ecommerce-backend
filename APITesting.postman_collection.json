@@ -71,6 +71,36 @@
           "response": []
         },
         {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \r\n     \"refreshToken\": \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiZXhwIjoxNzk0ODQ2NTE4LCJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImlhdCI6MTc5NDI0MTcxOCwianRpIjoiMTQyNGE2ZGYtNDU1Mi00MmZhLWEyNjUtYWZhNWM0YWM5NGVkIn0.ZCbCevyniBPIH4ZBp8mF6QUh1M2D_aMI4hlASH4EQ54\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/auth/refresh",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Login Test User Valid Credentials",
           "request": {
             "method": "POST",
