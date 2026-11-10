@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminProductController {
 
     private final AdminProductService adminProductService;
-    //Same here check is user is Admin
 
     @GetMapping
     public Page<ProductResponse> list(

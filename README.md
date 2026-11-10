@@ -117,10 +117,8 @@ All tables have `id` (PK, auto increment), `created_on`, `updated_on`. There is 
 
 **Features**
 - Forgot password / reset password (token + email)
-- Email verification and email sending in general
 - Reviews and ratings (entity exists; only after delivered orders)
 - Refunds (admin) and partial refunds; handling a payment that succeeds after the order was cancelled
-- Wishlist, coupons, shipping costs, taxes
 
 **Engineering**
 - Unit and integration tests
