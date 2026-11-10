@@ -83,6 +83,11 @@ public class GlobalExceptionHandler {
         return build(ErrorCode.PAYLOAD_TOO_LARGE, "File is too large", req);
     }
 
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRefresh(HttpServletRequest req) {
+        return build(ErrorCode.INVALID_REFRESH_TOKEN, "Invalid refresh token", req);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(HttpServletRequest req) {
         return build(ErrorCode.INTERNAL_ERROR, "Something went wrong", req);

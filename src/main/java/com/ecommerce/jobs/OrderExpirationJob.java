@@ -1,7 +1,8 @@
-package com.ecommerce.services;
+package com.ecommerce.jobs;
 
 import com.ecommerce.models.enums.OrderStatus;
 import com.ecommerce.repositories.OrderRepository;
+import com.ecommerce.services.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

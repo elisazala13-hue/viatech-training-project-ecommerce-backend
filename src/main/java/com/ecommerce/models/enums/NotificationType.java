@@ -1,6 +1,0 @@
-package com.ecommerce.models.enums;
-
-public enum NotificationType {
-    SELLER_APPROVED, SELLER_REJECTED, PRODUCT_APPROVED, PRODUCT_REJECTED,
-    ORDER_PLACED, ORDER_STATUS_CHANGED, PAYMENT_RESULT
-}

@@ -13,6 +13,7 @@ public enum ErrorCode {
     NOT_FOUND(HttpStatus.NOT_FOUND),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR),
     PAYLOAD_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE),
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED),
     PAYMENT_PROVIDER_ERROR(HttpStatus.BAD_GATEWAY);
 
     private final HttpStatus httpStatus;

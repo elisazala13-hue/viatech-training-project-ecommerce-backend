@@ -2,7 +2,7 @@
 
 A study project: a multi-vendor marketplace where customers browse and buy products from many sellers, sellers manage their own store and orders, and admins moderate the platform.
 
-**Stack:** Java 17+, Spring Boot 3/4, Spring Data JPA (Hibernate), MySQL, Spring Security 6 + JWT (stateless), Stripe (PaymentIntents + webhooks), Lombok, Bean Validation. Frontend: React + TypeScript.
+**Stack:** Java 17+, Spring Boot 3/4, Spring Data JPA (Hibernate), MySQL, Spring Security 6 + OAuth2 Resource Server (JWT access token) + stateful refresh tokens, Stripe (PaymentIntents + webhooks), Lombok, Bean Validation. Frontend: React + TypeScript.
 
 ---
 
@@ -13,28 +13,33 @@ Layered architecture, grouped by element type (not by feature):
 ```
 com.ecommerce
 ├── EcommerceApplication.java
-├── config            JpaConfig (auditing), WebConfig (/uploads), StripeConfig, SchedulingConfig
+├── config            JwtConfig (encoder/decoder/converter), SecurityConfig, CorsConfig, 
+│                     JpaConfig (auditing), WebConfig (/uploads), StripeConfig
+├── jobs              Scheduled jobs: OrderExpirationJob, RefreshTokenCleanupJob
 ├── controllers       REST controllers (validation + delegation)
 ├── services          Business logic, @Transactional, ownership checks
 ├── repositories      Spring Data JPA repositories
 ├── models
 │   ├── entities      JPA entities (all extend AuditorEntity)
-│   ├── enums         RoleName, UserStatus, SellerStatus, ProductStatus,
-│   │                 OrderStatus, PaymentStatus, ReviewStatus, NotificationType
+│   ├── enums         UserRole, UserStatus, SellerStatus, ProductStatus,
+│   │                 OrderStatus, PaymentStatus
 │   └── dto
 │       ├── requests  Incoming payloads 
 │       └── responses Outgoing payloads 
 ├── security          CustomUserDetails, CustomUserDetailsService, JwtService,
-│                     JwtAuthenticationFilter, SecurityConfig
-└── exceptions        ErrorCode, ErrorResponse, domain exceptions, GlobalExceptionHandler
+└── exceptions        domain exceptions
+     └── handlers     ErrorCode, ErrorResponse, GlobalExceptionHandler
 ```
 
 Request flow: `Controller → Service → Repository → MySQL`. Entities are never exposed; controllers return response DTOs.
 
 ### Key design decisions
 - **Bidirectional `@OneToMany(mappedBy)` only where the parent owns the children** (Cart→CartItem, Order→SellerOrder→OrderItem, Product→ProductImage). Everything else is queried through repositories.
-- **Stateless JWT auth.** A custom `JwtAuthenticationFilter` loads the user from the DB on each request, so suspended users are blocked immediately. The role is not stored in the token.
-- **Method security** with `@PreAuthorize` and `@EnableMethodSecurity`; URL rules in `SecurityConfig`.
+- **OAuth2 Resource Server + short-lived JWT access token.** Spring validates the `Bearer` token
+ with a `JwtDecoder`.  Access tokens live 15 minutes.
+- **Stateful refresh tokens with rotation.** The refresh token is a random string stored in the
+  `refresh_token` table. Every `/auth/refresh` revokes the used token and issues a new one.
+- **Scheduled cleanup**: `RefreshTokenCleanupJob` deletes expired refresh tokens nightly (03:00).
 - **Consistent error format** via `GlobalExceptionHandler`: `{ code, status, error, message, path, timestamp, fieldErrors }`.
 - **Auditing** (`createdOn`, `updatedOn`) through `AuditorEntity` + `@EnableJpaAuditing`.
 - **Money** is `BigDecimal`; Stripe amounts are converted to cents on the server.
@@ -44,7 +49,10 @@ Request flow: `Controller → Service → Repository → MySQL`. Entities are ne
 
 ## 2. Domain flows
 
-**Auth:** register (always as CUSTOMER) → login → JWT. `/users/me` to update the profile.
+**Auth:** register (always as CUSTOMER) → login → `{ accessToken, refreshToken, tokenType, user }`.
+When the access token expires (401), the client calls `POST /auth/refresh` with the refresh token
+(no `Authorization` header) and receives a new pair. Logout revokes all refresh tokens of the user.
+`/users/me` to update the profile.
 
 **Seller application:** a user applies (`POST /sellers/apply`) → seller profile is `PENDING` → admin approves/rejects → on approval the user's role becomes `SELLER`. Sellers manage one store and their own products.
 
@@ -85,15 +93,14 @@ All tables have `id` (PK, auto increment), `created_on`, `updated_on`. There is 
 | `order_items` | product_name, unit_price, quantity (snapshots) | N:1 seller_orders, N:1 products |
 | `payments` | stripe_payment_intent_id, amount, currency, status, failure_reason | N:1 orders |
 | `reviews` | rating, comment | *(entity exists, not implemented)* |
-| `notifications` | type, message | *(entity exists, not implemented)* |
-
+| `refresh_token` | token (SHA-256 hash, unique), expiry_date, revoked | N:1 users |
 ---
 
 ## 4. Main endpoints (prefix `/api`)
 
 | Area | Endpoints |
 |---|---|
-| Auth | `POST /auth/register`, `POST /auth/login` |
+| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout` |
 | Users | `GET/PUT /users/me` |
 | Sellers | `POST /sellers/apply`, `GET/PUT /sellers/me`, `/sellers/me/store`, `/sellers/me/products`, `/sellers/me/orders` |
 | Catalog | `GET /products` (search, filter, paging), `GET /products/{id}`, `GET /categories`, `GET /stores/{id}` |
@@ -111,15 +118,12 @@ All tables have `id` (PK, auto increment), `created_on`, `updated_on`. There is 
 **Features**
 - Forgot password / reset password (token + email)
 - Email verification and email sending in general
-- Notifications (entity exists; no service, no triggers, no endpoints)
 - Reviews and ratings (entity exists; only after delivered orders)
 - Refunds (admin) and partial refunds; handling a payment that succeeds after the order was cancelled
-- Seller analytics/dashboard, product stock alerts
 - Wishlist, coupons, shipping costs, taxes
 
 **Engineering**
 - Unit and integration tests
-- Refresh tokens / logout (token revocation)
 ---
 
 ## 6. Configuration
@@ -128,11 +132,12 @@ Environment variables (never commit them):
 
 | Variable | Purpose |
 |---|---|
-| `JWT_SECRET` | HS256 signing key (long random string) |
+| `JWT_SECRET` | HS256 signing key, Base64-encoded, at least 32 bytes after decoding |
 | `STRIPE_SECRET_KEY` | `sk_test_...` from the Stripe Dashboard |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` from `stripe listen` |
 
-Other properties: `jwt.expiration-ms`, `app.upload-dir`, `app.currency`, `app.order-expiration-minutes`, multipart limits, DB connection.
+Other properties: `jwt.expiration-ms` (access token, 900000 = 15 min),
+`jwt.refresh-expiration-ms` (refresh token, 604800000 = 7 days), `app.upload-dir`, `app.currency`, `app.order-expiration-minutes`, multipart limits, DB connection.
 
 ## 7. Running locally
 
