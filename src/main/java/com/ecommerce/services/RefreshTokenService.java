@@ -5,27 +5,18 @@ import com.ecommerce.exceptions.InvalidRefreshTokenException;
 import com.ecommerce.models.entities.RefreshToken;
 import com.ecommerce.models.entities.User;
 import com.ecommerce.repositories.RefreshTokenRepository;
+import com.ecommerce.utils.TokenUtils;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.HexFormat;
 
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
-
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final RefreshTokenRepository repo;
 
@@ -36,66 +27,50 @@ public class RefreshTokenService {
 
     @Transactional
     public String issue(User user) {
-        return create(user);
+        String raw = TokenUtils.randomToken();
+
+        RefreshToken rt = new RefreshToken();
+        rt.setUser(user);
+        // saves hashed in db always
+        rt.setToken(TokenUtils.sha256(raw));
+        rt.setExpiryDate(Instant.now().plusMillis(refreshExpirationMs));
+        rt.setRevoked(false);
+        repo.save(rt);
+
+        // sends raw token to frontend
+        return raw;
     }
 
-    @Transactional(noRollbackFor = ResponseStatusException.class)
+    @Transactional(noRollbackFor = InvalidRefreshTokenException.class)
     public Issued rotate(String raw) {
-        RefreshToken old = repo.findByToken(hash(raw))
-                .orElseThrow(this::unauthorized);
+        RefreshToken old = repo.findByToken(TokenUtils.sha256(raw))
+                .orElseThrow(InvalidRefreshTokenException::new);
 
         // in case of stolen token
         if (old.isRevoked()) {
             repo.revokeAllByUser(old.getUser());
-            throw unauthorized();
+            throw new InvalidRefreshTokenException();
         }
         if (old.getExpiryDate().isBefore(Instant.now())) {
-            throw unauthorized();
+            throw new InvalidRefreshTokenException();
         }
 
         old.setRevoked(true);
         User user = old.getUser();
-
         // initialize user because of lazy
         Hibernate.initialize(user);
-        return new Issued(user, create(user));
+        return new Issued(user, issue(user));
     }
 
+    // when used or in logout
     @Transactional
     public void revoke(String raw) {
-        repo.findByToken(hash(raw)).ifPresent(rt -> rt.setRevoked(true));
+        repo.findByToken(TokenUtils.sha256(raw)).ifPresent(rt -> rt.setRevoked(true));
     }
 
+    // in case of theft
     @Transactional
     public void revokeAll(User user) {
         repo.revokeAllByUser(user);
-    }
-
-    private String create(User user) {
-        byte[] bytes = new byte[32];
-        RANDOM.nextBytes(bytes);
-        String raw = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-
-        RefreshToken rt = new RefreshToken();
-        rt.setUser(user);
-        rt.setToken(hash(raw));
-        rt.setExpiryDate(Instant.now().plusMillis(refreshExpirationMs));
-        rt.setRevoked(false);
-        repo.save(rt);
-        return raw;
-    }
-
-    private InvalidRefreshTokenException unauthorized() {
-        return new InvalidRefreshTokenException();
-    }
-
-    private String hash(String raw) {
-        try {
-            byte[] d = MessageDigest.getInstance("SHA-256")
-                    .digest(raw.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(d);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }

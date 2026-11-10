@@ -1,11 +1,10 @@
 package com.ecommerce.controllers;
 
-import com.ecommerce.models.DTO.requests.LoginRequest;
-import com.ecommerce.models.DTO.requests.RefreshRequest;
+import com.ecommerce.models.DTO.requests.*;
 import com.ecommerce.models.DTO.responses.LoginResponse;
-import com.ecommerce.models.DTO.requests.RegisterRequest;
 import com.ecommerce.models.DTO.responses.UserResponse;
 import com.ecommerce.services.AuthService;
+import com.ecommerce.services.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
+
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -41,6 +42,18 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest req) {
         authService.logout(req);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
+        passwordResetService.requestReset(req.email());
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+        passwordResetService.reset(req.token(), req.newPassword());
         return ResponseEntity.noContent().build();
     }
 }
