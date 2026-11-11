@@ -1,4 +1,4 @@
-package com.ecommerce.controllers;
+package com.ecommerce.controllers.admin;
 
 import com.ecommerce.models.DTO.responses.ProductResponse;
 import com.ecommerce.models.enums.ProductStatus;

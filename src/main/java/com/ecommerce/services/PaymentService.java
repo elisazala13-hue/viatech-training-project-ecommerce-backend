@@ -23,6 +23,8 @@ import com.stripe.net.Webhook;
 import com.stripe.param.PaymentIntentCreateParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +47,21 @@ public class PaymentService {
 
     @Value("${app.currency:eur}")
     private String currency;
+
+    @Transactional(readOnly = true)
+    public Page<PaymentResponse> listAll(PaymentStatus status, Pageable pageable) {
+        Page<Payment> page = (status == null)
+                ? paymentRepository.findAll(pageable)
+                : paymentRepository.findByStatus(status, pageable);
+        return page.map(PaymentResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public PaymentResponse getAny(Long paymentId) {
+        return paymentRepository.findById(paymentId)
+                .map(PaymentResponse::from)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+    }
 
     @Transactional
     public PaymentIntentResponse createIntent(Long userId, Long orderId) {
@@ -93,7 +110,7 @@ public class PaymentService {
             payment.setCurrency(currency);
             payment.setStatus(PaymentStatus.PENDING);
 
-            // the clientSecret token is sent to the client and it allows them to pay for the order through Stripe
+            // the clientSecret token is sent to the client, and it allows them to pay for the order through Stripe
             return PaymentIntentResponse.of(paymentRepository.save(payment), intent.getClientSecret());
 
         } catch (StripeException e) {
@@ -172,7 +189,6 @@ public class PaymentService {
             throw new BadRequestException("Cannot read Stripe event");
         }
     }
-
 
     @Transactional
     public void cancelPendingIntents(Long orderId) {

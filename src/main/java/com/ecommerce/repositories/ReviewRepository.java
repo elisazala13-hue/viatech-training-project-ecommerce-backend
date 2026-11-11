@@ -1,6 +1,7 @@
 package com.ecommerce.repositories;
 
 import com.ecommerce.models.entities.Review;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import org.springframework.data.domain.Page;
@@ -10,6 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+
+@NullMarked
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     interface RatingSummary {

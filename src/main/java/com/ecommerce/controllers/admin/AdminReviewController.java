@@ -1,4 +1,4 @@
-package com.ecommerce.controllers;
+package com.ecommerce.controllers.admin;
 
 import com.ecommerce.models.DTO.responses.ReviewResponse;
 import com.ecommerce.services.ReviewService;

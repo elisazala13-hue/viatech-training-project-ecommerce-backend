@@ -13,14 +13,13 @@ import com.ecommerce.models.enums.OrderStatus;
 import com.ecommerce.repositories.OrderRepository;
 import com.ecommerce.repositories.ProductRepository;
 import com.ecommerce.repositories.SellerOrderRepository;
+import com.ecommerce.utils.OrderStatusCalculator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.management.monitor.GaugeMonitor;
-import java.util.Comparator;
 import java.util.Map;
 
 @Service
@@ -101,11 +100,7 @@ public class OrderService {
         sellerOrder.setStatus(newStatus);
 
         // changes total order depending on the other seller orders (sets the min seller order status as the order status)
-        Order order = sellerOrder.getOrder();
-        order.getSellerOrders().stream()
-                .map(SellerOrder::getStatus)
-                .min(Comparator.naturalOrder())
-                .ifPresent(order::setStatus);
+        OrderStatusCalculator.recalculate(sellerOrder.getOrder());
 
         return SellerOrderDetailResponse.from(sellerOrder);
     }
