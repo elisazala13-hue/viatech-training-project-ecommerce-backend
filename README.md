@@ -26,7 +26,8 @@ com.ecommerce
 │   └── dto
 │       ├── requests  Incoming payloads 
 │       └── responses Outgoing payloads 
-├── security          CustomUserDetails, CustomUserDetailsService, JwtService,
+├── security          CustomUserDetails, CustomUserDetailsService, JwtService
+├── utils             TokenUtils
 └── exceptions        domain exceptions
      └── handlers     ErrorCode, ErrorResponse, GlobalExceptionHandler
 ```
@@ -39,7 +40,7 @@ Request flow: `Controller → Service → Repository → MySQL`. Entities are ne
  with a `JwtDecoder`.  Access tokens live 15 minutes.
 - **Stateful refresh tokens with rotation.** The refresh token is a random string stored in the
   `refresh_token` table. Every `/auth/refresh` revokes the used token and issues a new one.
-- **Scheduled cleanup**: `RefreshTokenCleanupJob` deletes expired refresh tokens nightly (03:00).
+- **Scheduled cleanup**: `RefreshTokenCleanupJob` deletes expired refresh and password reset tokens nightly.
 - **Consistent error format** via `GlobalExceptionHandler`: `{ code, status, error, message, path, timestamp, fieldErrors }`.
 - **Auditing** (`createdOn`, `updatedOn`) through `AuditorEntity` + `@EnableJpaAuditing`.
 - **Money** is `BigDecimal`; Stripe amounts are converted to cents on the server.
@@ -67,7 +68,7 @@ Cart  →  POST /checkout  →  Order (PENDING_PAYMENT) + SellerOrders + OrderIt
 ```
 - Stock is **reserved at checkout** with an atomic `UPDATE ... WHERE quantity >= qty`.
 - Unpaid orders are cancelled by the customer or automatically after 30 minutes (`OrderExpirationJob`), and stock is restored.
-- Deleting/rejecting a product removes it from carts, but existing `OrderItem`s keep their snapshot.
+- Deleting a product removes it from carts, but existing `OrderItem`s keep their snapshot.
 - `Order.status` is derived from the slowest `SellerOrder`.
 - Sellers can also buy, but not their own products.
 
@@ -77,48 +78,49 @@ Cart  →  POST /checkout  →  Order (PENDING_PAYMENT) + SellerOrders + OrderIt
 
 All tables have `id` (PK, auto increment), `created_on`, `updated_on`. There is **no roles table**: the role is an enum column on `users` *(verify column name/type)*.
 
-| Table | Main columns | Relations |
-|---|---|---|
-| `users` | email (unique), password (BCrypt), full_name, status (ACTIVE/SUSPENDED), role (CUSTOMER/SELLER/ADMIN) | – |
-| `addresses` | full_name, phone, city, state, postal_code, country, default_address | N:1 users |
-| `seller_profiles` | nipt, business_phone, business_address, status (PENDING/APPROVED/REJECTED/SUSPENDED), rejection_reason | 1:1 users |
-| `stores` | name, description | 1:1 seller_profiles |
-| `categories` | name (unique) | – |
-| `products` | name, description, price, quantity (stock), status (PENDING/APPROVED/REJECTED/DELETED) | N:1 seller_profiles, N:1 categories |
-| `product_images` | url, primary_image | N:1 products |
-| `carts` | – | 1:1 users |
-| `cart_items` | quantity | N:1 carts, N:1 products |
-| `orders` | status, total_amount | N:1 users (customer), N:1 addresses (shipping) |
-| `seller_orders` | status, subtotal | N:1 orders, N:1 seller_profiles |
-| `order_items` | product_name, unit_price, quantity (snapshots) | N:1 seller_orders, N:1 products |
-| `payments` | stripe_payment_intent_id, amount, currency, status, failure_reason | N:1 orders |
-| `reviews` | rating, comment | *(entity exists, not implemented)* |
-| `refresh_token` | token (SHA-256 hash, unique), expiry_date, revoked | N:1 users |
+| Table                  | Main columns                                                                                           | Relations |
+|------------------------|--------------------------------------------------------------------------------------------------------|---|
+| `users`                | email (unique), password (BCrypt), full_name, status (ACTIVE/SUSPENDED), role (CUSTOMER/SELLER/ADMIN)  | – |
+| `addresses`            | full_name, phone, city, state, postal_code, country, default_address                                   | N:1 users |
+| `seller_profiles`      | nipt, business_phone, business_address, status (PENDING/APPROVED/REJECTED/SUSPENDED), rejection_reason | 1:1 users |
+| `stores`               | name, description                                                                                      | 1:1 seller_profiles |
+| `categories`           | name (unique)                                                                                          | – |
+| `products`             | name, description, price, quantity (stock), status (PENDING/APPROVED/REJECTED/DELETED)                 | N:1 seller_profiles, N:1 categories |
+| `product_images`       | url, primary_image                                                                                     | N:1 products |
+| `carts`                | –                                                                                                      | 1:1 users |
+| `cart_items`           | quantity                                                                                               | N:1 carts, N:1 products |
+| `orders`               | status, total_amount                                                                                   | N:1 users (customer), N:1 addresses (shipping) |
+| `seller_orders`        | status, subtotal                                                                                       | N:1 orders, N:1 seller_profiles |
+| `order_items`          | product_name, unit_price, quantity (snapshots)                                                         | N:1 seller_orders, N:1 products |
+| `payments`             | stripe_payment_intent_id, amount, currency, status, failure_reason                                     | N:1 orders |
+| `reviews`              | rating, comment                                                                                        | *(entity exists, not implemented)* |
+| `refresh_token`        | token (SHA-256 hash, unique), expiry_date, revoked                                                     | N:1 users |
+| `password_reset_token` | token (SHA-256 hash, unique), expiry_date, used                                                        | N:1 users |
+
 ---
 
 ## 4. Main endpoints (prefix `/api`)
 
-| Area | Endpoints |
-|---|---|
-| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout` |
-| Users | `GET/PUT /users/me` |
-| Sellers | `POST /sellers/apply`, `GET/PUT /sellers/me`, `/sellers/me/store`, `/sellers/me/products`, `/sellers/me/orders` |
-| Catalog | `GET /products` (search, filter, paging), `GET /products/{id}`, `GET /categories`, `GET /stores/{id}` |
-| Products | `POST/PUT/DELETE /products`, image upload (`multipart/form-data`, key `file`) |
-| Cart | `GET /cart`, `POST /cart/items`, `PUT/DELETE /cart/items/{id}` |
-| Orders | `POST /checkout`, `GET /orders`, `GET /orders/{id}`, `POST /orders/{id}/cancel` |
-| Seller orders | `PATCH /seller-orders/{id}/status` |
-| Payments | `POST /payments/intent`, `GET /payments/{id}`, `POST /payments/webhooks/stripe` |
-| Admin | `/admin/sellers`, `/admin/products`, `/admin/orders` |
+| Area | Endpoints                                                                                                                                       |
+|---|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/forgot-password`, `POST /auth/reset-password` |
+| Users | `GET/PUT /users/me`                                                                                                                             |
+| Sellers | `POST /sellers/apply`, `GET/PUT /sellers/me`, `/sellers/me/store`, `/sellers/me/products`, `/sellers/me/orders`                                 |
+| Catalog | `GET /products` (search, filter, paging), `GET /products/{id}`, `GET /categories`, `GET /stores/{id}`                                           |
+| Products | `POST/PUT/DELETE /products`, image upload (`multipart/form-data`, key `file`)                                                                   |
+| Cart | `GET /cart`, `POST /cart/items`, `PUT/DELETE /cart/items/{id}`                                                                                  |
+| Orders | `POST /checkout`, `GET /orders`, `GET /orders/{id}`, `POST /orders/{id}/cancel`                                                                 |
+| Seller orders | `PATCH /seller-orders/{id}/status`                                                                                                              |
+| Payments | `POST /payments/intent`, `GET /payments/{id}`, `POST /payments/webhooks/stripe`                                                                 |
+| Admin | `/admin/sellers`, `/admin/products`, `/admin/orders`                                                                                            |
 
 ---
 
 ## 5. Not implemented yet
 
 **Features**
-- Forgot password / reset password (token + email)
 - Reviews and ratings (entity exists; only after delivered orders)
-- Refunds (admin) and partial refunds; handling a payment that succeeds after the order was cancelled
+- Refunds (admin) 
 
 **Engineering**
 - Unit and integration tests

@@ -6,7 +6,8 @@ import lombok.Setter;
 
 @Getter @Setter
 @Entity
-@Table(name = "reviews")
+@Table(name = "reviews",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "product_id"}))
 public class Review extends AuditorEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

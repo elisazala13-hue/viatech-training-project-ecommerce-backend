@@ -31,76 +31,72 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadable(HttpServletRequest req) {
-        return build(ErrorCode.BAD_REQUEST, "Malformed JSON request", req);
+        return build(ErrorCode.BAD_REQUEST, "Malformed JSON request", req, null);
     }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleEmailExists(EmailAlreadyExistsException ex,
-                                                           HttpServletRequest req) {
-        return build(ErrorCode.EMAIL_ALREADY_EXISTS, ex.getMessage(), req);
+    public ResponseEntity<ErrorResponse> handleEmailExists(
+            EmailAlreadyExistsException ex, HttpServletRequest req) {
+        return build(ErrorCode.EMAIL_ALREADY_EXISTS, ex.getMessage(), req, null);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(HttpServletRequest req) {
-        return build(ErrorCode.INVALID_CREDENTIALS, "Invalid email or password", req);
+        return build(ErrorCode.INVALID_CREDENTIALS, "Invalid email or password", req, null);
     }
 
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<ErrorResponse> handleDisabled(HttpServletRequest req) {
-        return build(ErrorCode.ACCOUNT_SUSPENDED, "Account is suspended", req);
+        return build(ErrorCode.ACCOUNT_SUSPENDED, "Account is suspended", req, null);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(HttpServletRequest req) {
-        return build(ErrorCode.ACCESS_DENIED, "You do not have permission", req);
+        return build(ErrorCode.ACCESS_DENIED, "You do not have permission", req, null);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex,
-                                                        HttpServletRequest req) {
-        return build(ErrorCode.NOT_FOUND, ex.getMessage(), req);
+    public ResponseEntity<ErrorResponse> handleNotFound(
+            ResourceNotFoundException ex, HttpServletRequest req) {
+        return build(ErrorCode.NOT_FOUND, ex.getMessage(), req, null);
     }
 
     @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex,
-                                                        HttpServletRequest req) {
-        return build(ErrorCode.CONFLICT, ex.getMessage(), req);
+    public ResponseEntity<ErrorResponse> handleConflict(
+            ConflictException ex, HttpServletRequest req) {
+        return build(ErrorCode.CONFLICT, ex.getMessage(), req, null);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(HttpServletRequest req) {
-        return build(ErrorCode.BAD_REQUEST, "Invalid request parameter", req);
+        return build(ErrorCode.BAD_REQUEST, "Invalid request parameter", req, null);
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex,
-                                                          HttpServletRequest req) {
-        return build(ErrorCode.BAD_REQUEST, ex.getMessage(), req);
+    public ResponseEntity<ErrorResponse> handleBadRequest(
+            BadRequestException ex, HttpServletRequest req) {
+        return build(ErrorCode.BAD_REQUEST, ex.getMessage(), req, null);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleTooLarge(HttpServletRequest req) {
-        return build(ErrorCode.PAYLOAD_TOO_LARGE, "File is too large", req);
+        return build(ErrorCode.PAYLOAD_TOO_LARGE, "File is too large", req, null);
     }
 
     @ExceptionHandler(InvalidRefreshTokenException.class)
     public ResponseEntity<ErrorResponse> handleInvalidRefresh(HttpServletRequest req) {
-        return build(ErrorCode.INVALID_REFRESH_TOKEN, "Invalid refresh token", req);
+        return build(ErrorCode.INVALID_REFRESH_TOKEN, "Invalid refresh token", req, null);
+    }
+
+    @ExceptionHandler(PaymentException.class)
+    public ResponseEntity<ErrorResponse> handlePayment(
+            PaymentException ex, HttpServletRequest req) {
+        return build(ErrorCode.PAYMENT_PROVIDER_ERROR, ex.getMessage(), req, null);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(HttpServletRequest req) {
-        return build(ErrorCode.INTERNAL_ERROR, "Something went wrong", req);
-    }
-
-    @ExceptionHandler(PaymentException.class)
-    public ResponseEntity<ErrorResponse> handlePayment(PaymentException ex, HttpServletRequest req) {
-        return build(ErrorCode.PAYMENT_PROVIDER_ERROR, ex.getMessage(), req);
-    }
-
-    private ResponseEntity<ErrorResponse> build(ErrorCode code, String message,
-                                                HttpServletRequest req) {
-        return build(code, message, req, null);
+        return build(ErrorCode.INTERNAL_ERROR, "Something went wrong", req, null);
     }
 
     private ResponseEntity<ErrorResponse> build(ErrorCode code, String message,

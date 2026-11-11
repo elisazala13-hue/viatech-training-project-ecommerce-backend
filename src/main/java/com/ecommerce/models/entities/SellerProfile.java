@@ -13,12 +13,15 @@ public class SellerProfile extends AuditorEntity {
     private Long id;
 
     @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", unique = true)
     private User user;
 
     @Column(unique = true)
     private String nipt;
 
+    @Column(unique = true)
     private String businessPhone;
+
     private String businessAddress;
 
     @Enumerated(EnumType.STRING)

@@ -12,8 +12,11 @@ public class Store extends AuditorEntity {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_id", unique = true)
     private SellerProfile seller;
 
+    @Column(unique = true)
     private String name;
+
     private String description;
 }
