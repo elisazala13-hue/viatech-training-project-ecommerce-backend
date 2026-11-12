@@ -146,6 +146,7 @@ public class PaymentService {
         }
     }
 
+    @Transactional
     private void onSucceeded(PaymentIntent intent) {
         Payment payment = paymentRepository.findByStripePaymentIntentId(intent.getId()).orElse(null);
 
@@ -166,6 +167,7 @@ public class PaymentService {
         }
     }
 
+    @Transactional
     private void onFailed(PaymentIntent intent) {
         paymentRepository.findByStripePaymentIntentId(intent.getId())
                 .filter(p -> p.getStatus() == PaymentStatus.PENDING)

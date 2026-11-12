@@ -46,7 +46,7 @@ The project contains **148 Java files** across 6 packages: config (7), controlle
 
 ## 3. Bugs & Critical Issues
 
-### BUG-1: `CorsConfig` Missing `@Configuration` Annotation
+### [x] BUG-1: `CorsConfig` Missing `@Configuration` Annotation
 **Severity:** Critical
 **File:** `config/CorsConfig.java` (line 10)
 
@@ -61,7 +61,7 @@ public class CorsConfig {
 public class CorsConfig {
 ```
 
-### BUG-2: `handleWebhook` Missing `@Transactional` — Payment Status May Not Persist
+### [x] BUG-2: `handleWebhook` Missing `@Transactional` — Payment Status May Not Persist
 **Severity:** Critical
 **File:** `services/PaymentService.java` (line 129)
 
@@ -73,13 +73,13 @@ The `handleWebhook()` method and its private helpers `onSucceeded()` and `onFail
 public void handleWebhook(String payload, String signature) { ... }
 ```
 
-### BUG-3: `onSucceeded` — Payment Entity Not Explicitly Saved
+### [x] BUG-3: `onSucceeded` — Payment Entity Not Explicitly Saved
 **Severity:** High
 **File:** `services/PaymentService.java` (line 150)
 
 In `onSucceeded()`, the `payment` entity is loaded via `paymentRepository.findByStripePaymentIntentId()`, its status is changed to `SUCCEEDED`, but it is never explicitly saved. While dirty tracking in Hibernate should persist the change within the same transaction, this relies on implicit behavior. If the `@Transactional` annotation is missing (see BUG-2), the change is definitely lost.
 
-### BUG-4: `Category` Entity Missing `@Column(unique = true)`
+### [x] BUG-4: `Category` Entity Missing `@Column(unique = true)`
 **Severity:** High
 **File:** `models/entities/Category.java` (line 14)
 
@@ -94,7 +94,7 @@ private String name;
 private String name;
 ```
 
-### BUG-5: `SellerProfile.user` Uses `FetchType.EAGER`
+### [x] BUG-5: `SellerProfile.user` Uses `FetchType.EAGER`
 **Severity:** High
 **File:** `models/entities/SellerProfile.java` (line 15)
 
@@ -105,7 +105,7 @@ private User user;
 ```
 can you explain why its eager and not lazy
 
-### BUG-6: `ProductResponse.from()` — Potential `NullPointerException` on `category` or `seller`
+### [x] BUG-6: `ProductResponse.from()` — Potential `NullPointerException` on `category` or `seller`
 **Severity:** High
 **File:** `models/DTO/responses/ProductResponse.java` (lines 34-35)
 
@@ -116,7 +116,7 @@ p.getSeller().getId(), images, p.getCreatedOn());
 
 If a product's `category` or `seller` is null (e.g., a data inconsistency or a product in an intermediate state), this will throw a `NullPointerException`. Since both are `FetchType.LAZY`, accessing them without an `@EntityGraph` in some query paths could also throw `LazyInitializationException`.
 
-### BUG-7: `AuthService.logout()` — Only Revokes One Refresh Token
+### [x] BUG-7: `AuthService.logout()` — Only Revokes One Refresh Token
 **Severity:** Medium
 **File:** `services/AuthService.java` (line 78)
 
@@ -128,7 +128,7 @@ public void logout(RefreshRequest req) {
 
 The README says "Logout revokes all refresh tokens of the user." But the implementation only revokes the single token passed in the request. If a user is logged in on multiple devices, logging out from one device won't invalidate the tokens on other devices. This should call `refreshTokenService.revokeAll(user)` instead.
 
-### BUG-10: `OrderStatusCalculator.recalculate()` — Enum `naturalOrder()` May Not Reflect Business Progress
+### [x] BUG-10: `OrderStatusCalculator.recalculate()` — Enum `naturalOrder()` May Not Reflect Business Progress
 **Severity:** Medium
 **File:** `utils/OrderStatusCalculator.java` (line 18)
 
@@ -144,7 +144,7 @@ PENDING_PAYMENT, PAID, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED
 Alphabetically, `PAID < PENDING_PAYMENT < PROCESSING < REFUNDED < SHIPPED`. This means `PAID` would be considered "slower" than `PENDING_PAYMENT`, which is incorrect — `PENDING_PAYMENT` is the earliest state. The declaration order happens to work for the main flow, but `CANCELLED` (ordinal 5) and `REFUNDED` (ordinal 6) are filtered out, so the remaining ordinals (0-4) do match the business progression. However, this is fragile and should use an explicit ordinal mapping or a dedicated `getProgress()` method.
 
 
-### BUG-12: `handleWebhook` — Missing `refund.updated` and `refund.failed` Event Handling
+### [x] BUG-12: `handleWebhook` — Missing `refund.updated` and `refund.failed` Event Handling
 **Severity:** Medium
 **File:** `services/PaymentService.java` (lines 142-146)
 
@@ -155,7 +155,7 @@ stripe listen --events "payment_intent.succeeded,payment_intent.payment_failed,r
 
 But the webhook handler only processes `payment_intent.succeeded` and `payment_intent.payment_failed`. Refund events are silently ignored, meaning the backend never updates refund status from Stripe asynchronously.
 
-### BUG-14: `application.yml` — Hardcoded Database Credentials
+### [x] BUG-14: `application.yml` — Hardcoded Database Credentials
 **Severity:** Medium (Production)
 **File:** `src/main/resources/application.yml` (lines 21-23)
 

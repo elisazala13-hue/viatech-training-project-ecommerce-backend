@@ -15,8 +15,19 @@ public final class OrderStatusCalculator {
         OrderStatus status = order.getSellerOrders().stream()
                 .map(SellerOrder::getStatus)
                 .filter(s -> s != OrderStatus.REFUNDED && s != OrderStatus.CANCELLED)
-                .min(Comparator.naturalOrder())
+                .min(Comparator.comparingInt(OrderStatusCalculator::progress))
                 .orElse(OrderStatus.REFUNDED);
         order.setStatus(status);
+    }
+
+    private static int progress(OrderStatus s) {
+        return switch (s) {
+            case PENDING_PAYMENT -> 0;
+            case PAID -> 1;
+            case PROCESSING -> 2;
+            case SHIPPED -> 3;
+            case DELIVERED -> 4;
+            case CANCELLED, REFUNDED -> 5;
+        };
     }
 }

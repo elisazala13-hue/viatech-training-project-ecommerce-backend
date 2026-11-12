@@ -467,7 +467,7 @@
               }
             },
             "url": {
-              "raw": "http://localhost:8081/api/auth/refresh",
+              "raw": "http://localhost:8081/api/auth/logout",
               "protocol": "http",
               "host": [
                 "localhost"

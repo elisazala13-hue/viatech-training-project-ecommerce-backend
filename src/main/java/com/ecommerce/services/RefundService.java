@@ -19,6 +19,7 @@ import com.ecommerce.repositories.PaymentRepository;
 import com.ecommerce.repositories.ProductRepository;
 import com.ecommerce.utils.OrderStatusCalculator;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Refund;
 import com.stripe.net.RequestOptions;
 import com.stripe.param.RefundCreateParams;
 import lombok.RequiredArgsConstructor;
@@ -75,8 +76,6 @@ public class RefundService {
     public Page<RefundResponse> listMine(Long userId, Pageable pageable) {
         return refundRepository.findByPaymentOrderCustomerId(userId, pageable).map(RefundResponse::from);
     }
-//Very complicated  when you have a look pls explain to me so we can simplified it
-
 
     @Transactional
     public RefundResponse refund(Long orderId, RefundRequest req) {
@@ -114,7 +113,12 @@ public class RefundService {
         }
 
         // Stripe
-        com.stripe.model.Refund stripeRefund = createStripeRefund(payment, order, target, amount);
+        Refund stripeRefund = createStripeRefund(payment, order, target, amount);
+
+        // if Stripe rejected the refund, stop here nothing changes
+        if ("failed".equals(stripeRefund.getStatus()) || "canceled".equals(stripeRefund.getStatus())) {
+            throw new PaymentException("Refund was not accepted by the payment provider");
+        }
 
         // saves the refund in db
         PaymentRefund refund = new PaymentRefund();
@@ -122,16 +126,9 @@ public class RefundService {
         refund.setSellerOrder(target);
         refund.setAmount(amount);
 
-        refund.setStripeRefundId(stripeRefund.getId());
-        if ("succeeded".equals(stripeRefund.getStatus())) {
-            refund.setStatus(RefundStatus.SUCCEEDED);
-        } else if ("failed".equals(stripeRefund.getStatus())
-                || "canceled".equals(stripeRefund.getStatus())) {
-            refund.setStatus(RefundStatus.FAILED);
-            refund.setFailureReason(stripeRefund.getFailureReason());
-        } else {
-            refund.setStatus(RefundStatus.PENDING);
-        }
+        refund.setStatus("succeeded".equals(stripeRefund.getStatus())
+                ? RefundStatus.SUCCEEDED : RefundStatus.PENDING);
+        refundRepository.save(refund);
 
         refundRepository.save(refund);
 
@@ -168,7 +165,7 @@ public class RefundService {
     }
 
     // Stripe request
-    private com.stripe.model.Refund createStripeRefund(Payment payment, Order order,
+    private Refund createStripeRefund(Payment payment, Order order,
                                                        SellerOrder target, BigDecimal amount) {
         try {
             long cents = amount.movePointRight(2).longValueExact();
@@ -178,7 +175,7 @@ public class RefundService {
                     + (target == null ? "all" : target.getId()) + "-" + cents;
 
             // Stripe refund
-            return com.stripe.model.Refund.create(
+            return Refund.create(
                     RefundCreateParams.builder()
                             .setPaymentIntent(payment.getStripePaymentIntentId())
                             .setAmount(cents)

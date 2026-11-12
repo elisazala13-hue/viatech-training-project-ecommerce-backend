@@ -26,7 +26,8 @@ public class Product extends AuditorEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private SellerProfile seller;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
     @Enumerated(EnumType.STRING)

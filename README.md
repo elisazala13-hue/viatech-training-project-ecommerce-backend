@@ -53,7 +53,7 @@ Request flow: `Controller → Service → Repository → MySQL`. Entities are ne
 
 **Auth:** register (always as CUSTOMER) → login → `{ accessToken, refreshToken, tokenType, user }`.
 When the access token expires (401), the client calls `POST /auth/refresh` with the refresh token
-(no `Authorization` header) and receives a new pair. Logout revokes all refresh tokens of the user.
+(no `Authorization` header) and receives a new pair. Logout revokes the refresh token.
 `/users/me` to update the profile.
 
 **Seller application:** a user applies (`POST /sellers/apply`) → seller profile is `PENDING` → admin approves/rejects → on approval the user's role becomes `SELLER`. Sellers manage one store and their own products.
